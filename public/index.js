@@ -1,47 +1,3 @@
-class TaskManager {
-    static taskList = [];
-
-    static loadTasks(tasks){
-        for (let i=0; i<tasks.length; i++){
-            this.push(tasks[i].id, tasks[i].name, tasks[i].status);
-        }
-    }
-    static push(id, name, status) {
-        this.taskList.push({ "id": id, "name": name, "status": status });
-        TaskRenderer.addTask(id, name, status);
-    }
-    static update(id, name, status) {
-        RequestManager.replaceTask(id, name, status);
-
-        const index = this.taskList.find(function (obj, index) {
-            if (obj.id == id) {
-                return index;
-            }
-        });
-        this.taskList[index] = { "id": id, "name": name, "status": status };
-    }
-    static updateName(id, name) {
-        RequestManager.updateTaskName(id, name);
-
-        const index = this.taskList.findIndex((obj) => obj.id == id);
-        const currentTask = { ...this.taskList[index] };
-        this.taskList[index] = { "id": id, "name": name, "status": currentTask.status };
-    }
-    static updateStatus(id, status) {
-        RequestManager.updateTaskStatus(id, status);
-
-        const index = this.taskList.findIndex((obj) => obj.id == id);
-        const currentTask = { ...this.taskList[index] };
-        this.taskList[index] = { "id": id, "name": currentTask.name, "status": status };
-    }
-    static removeTask(id) {
-        RequestManager.removeTask(id);
-
-        const index = this.taskList.findIndex((obj) => obj.id == id);
-        this.taskList.splice(index, 1);
-    }
-}
-
 class TaskRenderer {
     static addTask(id, taskName, status) {
         const task_list = document.getElementById("task-list");
@@ -83,13 +39,13 @@ class TaskRenderer {
     }
     static removeTask(div, id) {
         div.remove();
-        TaskManager.removeTask(div.numId);
+        RequestManager.removeTask(div.numId);
     }
     static updateTaskName(id, input, button) {
         if (input.isEditing) {
             button.innerText = "done";
         } else {
-            TaskManager.updateName(id, input.value);
+            RequestManager.updateTaskName(id, input.value);
             button.innerText = "edit";
         }
 
@@ -97,13 +53,18 @@ class TaskRenderer {
         input.disabled = !input.disabled;
     }
     static updateTaskStatus(id, checked) {
-        TaskManager.updateStatus(id, checked);
+        RequestManager.updateTaskStatus(id, checked);
+    }
+    static loadTasks(tasks){
+        for (let i=0; i<tasks.length; i++){
+            this.addTask(tasks[i].id, tasks[i].name, tasks[i].status);
+        }
     }
 }
 
 class RequestManager {
     static requests = [];
-
+    
     static getTasks(url) {
         fetch("/tasks", {
             method: "GET"
@@ -112,7 +73,7 @@ class RequestManager {
             return resp.json();
         })
         .then(function (data) {
-            TaskManager.loadTasks(data);
+            TaskRenderer.loadTasks(data);
         })
         .catch((err)=> {throw err});
     }
@@ -128,7 +89,7 @@ class RequestManager {
         })
         .then(function (data) {
             const id = parseInt(data);
-            TaskManager.push(id, name, status);
+            TaskRenderer.addTask(id, name, status);
         })
         .catch((err)=> {throw err});
     }
